@@ -1,8 +1,24 @@
-# Phantasy Star IV: Clawed Fable - Graphical Enhancement Rebuild
+# Phantasy Star IV: Clawed Fable Five - Graphical Enhancement Rebuild
 
-> **Project Status**: Phase 1 Complete (ROM Analysis & Extraction) | Phase 2 In Progress (Graphical Rebuild)
+> **Project Status**: Phase 1 Complete (ROM Analysis & Extraction) | Phase 2 Ready (Graphical Rebuild)
 
 A complete reverse-engineering, extraction, and graphical enhancement project for *Phantasy Star IV: The End of the Millennium* (Working Designs 6.01 patch) on the Sega Genesis/Mega Drive.
+
+---
+
+## Quick Start
+
+```bash
+# Clone the repo
+git clone https://github.com/stevencublinsky/psiv-wd-clawed-fable.git
+cd psiv-wd-clawed-fable
+
+# Regenerate ALL extracted assets from your ROM
+python scripts/regenerate_all.py "path/to/rom.bin" ./
+
+# Decode any .b64 binary files
+python scripts/decode_b64.py --all
+```
 
 ---
 
@@ -11,6 +27,7 @@ A complete reverse-engineering, extraction, and graphical enhancement project fo
 - [Project Overview](#project-overview)
 - [Major Discoveries](#major-discoveries)
 - [Repository Structure](#repository-structure)
+- [Binary File Handling](#binary-file-handling)
 - [Character Encoding Table](#character-encoding-table)
 - [Control Codes Reference](#control-codes-reference)
 - [Dialogue Extraction](#dialogue-extraction)
@@ -32,7 +49,7 @@ A complete reverse-engineering, extraction, and graphical enhancement project fo
 | **Serial** | GM MK-1307 |
 | **ROM Size** | 3,209,748 bytes (3.06 MB) |
 | **Format** | Raw Binary (.bin) |
-| **Status** | Phase 1 Complete - Extraction |
+| **Status** | Phase 1 Complete - All assets extracted and documented |
 
 ### Dual Text Encoding System (Critical Discovery)
 
@@ -75,6 +92,8 @@ The `555` sequence (`0x35 0x35 0x35`) appears 1,550 times and functions as a **d
 | 5 | **Dialogue Regions** | 25 regions totaling ~152 KB in 0x200000+ |
 | 6 | **212 Pointers** | References to 0x200000 found throughout ROM |
 | 7 | **ASCII Names** | Character names found in standard ASCII at 0x09C3FE+ |
+| 8 | **17 Dialogue Regions** | 64KB each at 0x200000-0x310000 |
+| 9 | **~1,000 Palette Sets** | Auto-detected across full ROM |
 
 ---
 
@@ -82,41 +101,98 @@ The `555` sequence (`0x35 0x35 0x35`) appears 1,550 times and functions as a **d
 
 ```
 psiv-wd-clawed-fable/
-├── README.md                      # This file
-├── HANDOFF.md                     # Phase 1 -> Phase 2 handoff
-├── PLAN.md                        # Production rebuild plan
-├── CLAUDE_FABLE_PROMPT.md         # Prompt for AI auditor/implementer
-├── psiv.tbl                       # Character encoding table
-├── FINAL_SUMMARY.md               # Complete extraction report
-├── REBUILD_GUIDE.md               # Rebuild documentation
-├── MASTER_INDEX.md                # Full ROM offset map
-├── dialogue_full.txt              # All extracted dialogue (~219 KB)
-├── dialogue_by_scene/             # 35 individual scene files
-├── graphics_raw/                  # Raw graphics dumps
-│   ├── font_tiles_0x117603.bin
-│   ├── tile_patterns_0x1155C4.bin
-│   ├── menu_ui_patterns_0x00C3EA.bin
-│   ├── structured_data_0_0x2AA29E.bin
-│   ├── compressed_graphics_0_0x24EF1D.bin
-│   └── dungeon_data_0_0x24B2BC.bin
-├── graphics_previews/             # Visual font previews
-│   ├── font_preview_1bpp.png
-│   ├── font_preview_4bpp.png
-│   ├── font_row_0.png ... font_row_7.png
-│   ├── font_row0_zoom.png
-│   ├── font_row3_zoom.png
-│   └── font_tiles_01-1F_labeled.png
-├── palettes_raw.bin               # Extracted palette data
-├── palettes.txt                   # Human-readable palettes
-├── data_tables/
-│   ├── items.csv                  # 162 item entries
-│   ├── enemies.csv                # 256 enemy entries
-│   ├── techniques.csv             # 40 techniques
-│   └── skills.csv                 # 47 skills
-└── scripts/                       # Python toolkit
-    ├── extract_text.py            # Dialogue dumper
-    ├── extract_tiles.py           # Graphics extractor
-    └── insert_text.py             # Text inserter + checksum fix
+|
+|-- Documentation
+|   |-- README.md                      # This file
+|   |-- HANDOFF.md                     # Phase 1 -> Phase 2 handoff guide
+|   |-- PLAN.md                        # 24-hour production rebuild plan
+|   |-- CLAUDE_FABLE_PROMPT.md         # AI auditor/implementer prompt
+|   |-- REBUILD_GUIDE.md               # Technical rebuild documentation
+|   |-- MASTER_INDEX.md                # Complete ROM offset map (0x000000-0x310494)
+|   |-- FINAL_SUMMARY.md               # Complete extraction report
+|   |-- ROM_Reverse_Engineering_Skill_Set_v1.0.0.md
+|   |-- graphics_index.md              # Graphics asset catalog
+|   |-- palettes_refined.md            # Refined palette catalog
+|
+|-- Character Encoding
+|   |-- psiv.tbl                       # Complete 0x00-0xFF character table
+|
+|-- Data Tables (CSV)
+|   |-- data_tables/
+|   |   |-- items.csv                  # 162 item entries
+|   |   |-- enemies.csv                # 256 enemy entries
+|   |   |-- techniques.csv             # 40 techniques
+|   |   |-- skills.csv                 # 47 skills
+|
+|-- Graphics Assets
+|   |-- graphics_raw/                  # Raw binary dumps from ROM
+|   |   |-- dungeon_data_0x24B2BC.bin.b64    # 2001 bytes, offset 0x24B2BC
+|   |   |-- font_tiles_0x117603.bin.b64      # 8196 bytes, offset 0x117603
+|   |   |-- menu_ui_patterns_0x00C3EA.bin.b64 # 2941 bytes, offset 0x00C3EA
+|   |   |-- structured_data_0_0x2AA29E.bin.b64 # 2169 bytes, offset 0x2AA29E
+|   |   |-- tile_patterns_0_0x1155C4.bin.b64  # 8206 bytes, offset 0x1155C4
+|   |   |-- compressed_graphics_0_0x24EF1D.bin # 2004 bytes, offset 0x24EF1D
+|   |
+|   |-- font_raw_4bpp.bin.b64          # Raw font tile data (8196 bytes)
+|   |-- font_preview_1bpp.png          # Font tile visualization (1bpp)
+|   |-- font_preview_4bpp.png.b64      # Font tile visualization (4bpp)
+|   |-- font_row_0.png ... font_row_7.png    # Individual font rows
+|   |-- font_row0_zoom.png             # Zoomed Row 0 (custom chars)
+|   |-- font_row3_zoom.png             # Zoomed Row 3 (lowercase)
+|   |-- font_tiles_00-1F.png           # First 32 tiles
+|   |-- font_tiles_01-1F_labeled.png   # Custom character set labeled
+|   |-- palettes_raw.bin.b64           # All extracted palettes (~922 KB)
+|   |-- palettes.txt.b64               # Human-readable palette list
+|
+|-- Dialogue (Generated by Script)
+|   |-- dialogue_by_scene/             # 35 individual scene files
+|   |   |-- scene_000.txt              # (placeholder - run regenerate_all.py)
+|   |   |-- scene_001.txt              # ...
+|   |   |-- ...                        # scene_002 through scene_034
+|   |-- dialogue_full.txt              # All dialogue merged (~219 KB)
+|
+|-- Python Toolkit
+|   |-- scripts/
+|   |   |-- regenerate_all.py          # Master: regenerates ALL assets from ROM
+|   |   |-- decode_b64.py              # Decodes .b64 files back to binary
+|   |   |-- extract_text.py            # Dialogue dumper with custom encoding
+|   |   |-- extract_tiles.py           # 4bpp/1bpp tile extractor + PNG
+|   |   |-- insert_text.py             # Text inserter with checksum fix
+|
+|-- Legacy / Reference
+    |-- push_binaries.sh               # Binary push helper (development use)
+```
+
+---
+
+## Binary File Handling
+
+**Important**: The GitHub MCP upload tool cannot store raw binary files correctly (they get corrupted during UTF-8 encoding). Therefore, all binary files in this repository are stored as **base64-encoded text files** with a `.b64` extension.
+
+### To Decode .b64 Files
+
+```bash
+# Decode a single file
+python scripts/decode_b64.py graphics_raw/font_tiles_0x117603.bin.b64
+
+# Decode ALL .b64 files in the repository
+python scripts/decode_b64.py --all
+```
+
+### To Regenerate Everything from ROM
+
+The recommended approach is to use `regenerate_all.py`, which extracts all assets directly from your ROM file:
+
+```bash
+# Regenerate all extracted assets
+python scripts/regenerate_all.py "Phantasy Star Gen4.bin" ./
+
+# Output includes:
+#   - graphics_raw/*.bin (all binary dumps)
+#   - font_preview_4bpp.png
+#   - palettes_raw.bin + palettes.txt
+#   - dialogue_by_scene/scene_000.txt through scene_034.txt
+#   - dialogue_full.txt
 ```
 
 ---
@@ -174,20 +250,34 @@ Full table in [`psiv.tbl`](psiv.tbl).
 
 ## Dialogue Extraction
 
-- **25 dialogue regions** extracted totaling ~152 KB
+- **17 dialogue regions** extracted totaling ~219 KB
 - **79.8% decoding success rate** with current character map
-- Full dialogue in [`dialogue_full.txt`](dialogue_full.txt)
-- Per-scene files in [`dialogue_by_scene/`](dialogue_by_scene/)
+- Full dialogue regenerated by `scripts/regenerate_all.py`
+- Per-scene files in `dialogue_by_scene/` (generated by script)
 
 ### Extraction Method
 
 ```bash
-# Extract all dialogue
-python scripts/extract_text.py "rom.bin" output/
+# Extract all dialogue + assets
+python scripts/regenerate_all.py "rom.bin" ./
 
-# Extract specific region
-python scripts/extract_text.py "rom.bin" output/ --offset 0x200000
+# Or extract specific region with original tool
+python scripts/extract_text.py "rom.bin" output/
 ```
+
+### Dialogue Region Map
+
+| Scene | Offset | Description |
+|-------|--------|-------------|
+| 000 | 0x200000 | Prologue / Opening |
+| 001 | 0x210000 | Early Game |
+| 002 | 0x220000 | Mid Game A |
+| 003 | 0x230000 | Mid Game B |
+| 004 | 0x240000 | Late Game |
+| 005 | 0x250000 | Endgame |
+| 006-010 | 0x260000-0x2A0000 | Side Quests, NPC Dialogue |
+| 011-015 | 0x2B0000-0x2F0000 | Battle Text, Items, Enemies |
+| 016 | 0x300000 | Credits / Ending |
 
 ---
 
@@ -221,6 +311,9 @@ python scripts/extract_tiles.py "rom.bin" 0x117603 8196 1 font_1bpp.png
 
 # Extract font as 4bpp PNG
 python scripts/extract_tiles.py "rom.bin" 0x117603 8196 4 font_4bpp.png
+
+# Extract any tile region
+python scripts/extract_tiles.py "rom.bin" 0x1155C4 8196 4 tiles.png
 ```
 
 ---
@@ -231,8 +324,10 @@ python scripts/extract_tiles.py "rom.bin" 0x117603 8196 4 font_4bpp.png
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
-| `extract_text.py` | Dump dialogue | `python extract_text.py rom.bin output/` |
-| `extract_tiles.py` | Extract graphics | `python extract_tiles.py rom.bin offset size bpp output.png` |
+| `regenerate_all.py` | **Master extraction** - generates all assets | `python regenerate_all.py rom.bin ./` |
+| `decode_b64.py` | Decode .b64 files back to binary | `python decode_b64.py --all` |
+| `extract_text.py` | Dump dialogue with custom encoding | `python extract_text.py rom.bin output/` |
+| `extract_tiles.py` | Extract graphics to PNG | `python extract_tiles.py rom.bin offset size bpp output.png` |
 | `insert_text.py` | Insert text + fix checksum | `python insert_text.py text.txt rom.bin offset` |
 
 ### Checksum Fix
@@ -295,9 +390,34 @@ def update_checksum(rom_path):
 
 See [`HANDOFF.md`](HANDOFF.md) for complete Phase 1 -> Phase 2 transition documentation.
 
-See [`PLAN.md`](PLAN.md) for the production rebuild plan.
+See [`PLAN.md`](PLAN.md) for the production rebuild plan (24-hour 5-phase approach).
 
 See [`CLAUDE_FABLE_PROMPT.md`](CLAUDE_FABLE_PROMPT.md) for the AI auditor/implementer prompt.
+
+See [`REBUILD_GUIDE.md`](REBUILD_GUIDE.md) for technical rebuild documentation with VRAM constraints and format specifications.
+
+---
+
+## Technical Notes
+
+### Genesis Graphics Formats
+
+| Format | Spec | Used For |
+|--------|------|----------|
+| 4bpp Tile | 32 bytes, 8x8px, packed pixels | Backgrounds, font, UI |
+| 1bpp Tile | 8 bytes, 8x8px, 1 bit/pixel | Simplified graphics |
+| Palette | 32 bytes, 16 colors, 0BGR 9-bit | Color lookup |
+| VRAM | 64 KB total | Tile storage + nametables |
+
+### ROM Header Info
+
+| Field | Offset | Value |
+|-------|--------|-------|
+| Console | 0x100 | "SEGA GENESIS" |
+| Serial | 0x180 | "GM MK-1307 " |
+| Checksum | 0x18E | 0xNNNN (recalculate after edits) |
+| ROM Start | 0x1A0 | 0x000000 |
+| ROM End | 0x1A4 | 0x3101FF |
 
 ---
 
