@@ -1,3 +1,1 @@
-# Dialogue Region 3 - Mid Game A
-# ROM Offset: 0x220000
-============================================================
+# Placeholder - Run: python scripts/regenerate_all.py <rom> to generate all 35 scene files
